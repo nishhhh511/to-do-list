@@ -1,0 +1,236 @@
+# to-do-list
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To-Do List</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow-x: hidden;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 350px;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        input {
+            width: 75%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        li {
+            background: #f9f9f9;
+            margin: 5px 0;
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            border-radius: 5px;
+            opacity: 0;
+            animation: fadeIn 0.5s forwards;
+            transition: background 0.3s ease;
+        }
+        li:hover {
+            background: #e9ecef;
+        }
+        .delete {
+            background: red;
+            color: white;
+            border: none;
+            padding: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .delete:hover {
+            background-color: #dc3545;
+        }
+        .complete {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .completed-task {
+            text-decoration: line-through;
+            color: #ccc;
+        }
+        #clearBtn {
+            background-color: #dc3545;
+            margin-top: 10px;
+            width: 100%;
+            padding: 10px;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        #clearBtn:hover {
+            background-color: #c82333;
+        }
+        /* Animation Keyframes */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        @keyframes slideOut {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+        }
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        .priority-low {
+            background-color: #ffc107;
+        }
+        .priority-medium {
+            background-color: #ff9800;
+        }
+        .priority-high {
+            background-color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>To-Do List</h2>
+        <input type="text" id="task" placeholder="Add a new task">
+        <button onclick="addTask()">Add</button>
+        <ul id="taskList"></ul>
+        <button id="clearBtn" onclick="clearAllTasks()">Clear All Tasks</button>
+    </div>
+
+    <script>
+        // Function to load tasks from localStorage
+        function loadTasks() {
+            let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+            tasks.forEach(task => {
+                addTaskToList(task.text, task.completed, task.priority);
+            });
+        }
+
+        // Function to save tasks to localStorage
+        function saveTasks() {
+            let tasks = [];
+            let taskItems = document.querySelectorAll("#taskList li");
+            taskItems.forEach(item => {
+                tasks.push({
+                    text: item.textContent.replace("Complete", "").replace("X", "").trim(),
+                    completed: item.classList.contains("completed-task"),
+                    priority: item.classList.contains("priority-low") ? "low" : item.classList.contains("priority-medium") ? "medium" : "high"
+                });
+            });
+            localStorage.setItem("tasks", JSON.stringify(tasks));
+        }
+
+        // Function to add a task
+        function addTask() {
+            let taskInput = document.getElementById("task");
+            let taskText = taskInput.value.trim();
+            if (taskText === "") return;
+
+            // Prompt for priority
+            let priority = prompt("Enter task priority (low, medium, high):").toLowerCase();
+            if (!['low', 'medium', 'high'].includes(priority)) {
+                priority = 'low';
+            }
+
+            addTaskToList(taskText, false, priority);
+            taskInput.value = "";
+            saveTasks();  // Save the task to localStorage
+        }
+
+        // Function to add task to the list (with priority)
+        function addTaskToList(taskText, completed = false, priority = 'low') {
+            let li = document.createElement("li");
+            li.classList.add(`priority-${priority}`);
+            if (completed) li.classList.add("completed-task");
+
+            li.innerHTML = `${taskText} 
+                            <button class='complete' onclick='toggleComplete(this)'>Complete</button>
+                            <button class='delete' onclick='removeTask(this)'>X</button>`;
+
+            document.getElementById("taskList").appendChild(li);
+            saveTasks();  // Save the updated tasks to localStorage
+        }
+
+        // Function to remove a task with animation
+        function removeTask(button) {
+            let li = button.parentElement;
+            li.style.animation = "slideOut 0.5s forwards";
+            setTimeout(() => {
+                li.remove();
+                saveTasks();  // Save the updated tasks to localStorage
+            }, 500);
+        }
+
+        // Function to mark a task as complete or incomplete
+        function toggleComplete(button) {
+            let li = button.parentElement;
+            li.classList.toggle("completed-task");
+            saveTasks();  // Save the updated tasks to localStorage
+        }
+
+        // Function to clear all tasks
+        function clearAllTasks() {
+            document.getElementById("taskList").innerHTML = "";
+            localStorage.removeItem("tasks");  // Remove tasks from localStorage
+        }
+
+        // Load tasks on page load
+        window.onload = loadTasks;
+    </script>
+</body>
+</html>
